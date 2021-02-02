@@ -1,4 +1,4 @@
-import { StyleProp } from 'react-native';
+import { Dimensions, StyleProp } from 'react-native';
 import constants from './constants';
 import dictionary, { DictionaryKeys } from './dictionary';
 import { DynamicObject, Styles, StylesObject } from './types';
@@ -44,6 +44,22 @@ export const classNames = (
   return apply(...classes.split(' '), styles);
 };
 
+export const responsive = (styles: DynamicObject<StyleProp<Styles>>) => {
+  let currentSize: string = 'default';
+
+  Object.entries(constants.layout).map(([key, value]) => {
+    const lte = value.lte ?? 10000;
+    const gte = value.gte ?? 0;
+    const screenWidth = Dimensions.get('screen').width;
+
+    if (screenWidth >= gte && screenWidth <= lte) {
+      currentSize = key;
+    }
+  });
+
+  return apply(styles[currentSize] ?? styles.default ?? {});
+};
+
 const StylesCacheManager = {
   cache: {} as DynamicObject<Styles>,
   get: (key: string) => StylesCacheManager.cache[key],
@@ -65,6 +81,7 @@ export const extend = (custom: Partial<CustomConfig>) => {
     const t = type as ConstantsKey;
     Object.keys(custom[t] || {}).forEach(method => {
       if (constants.hasOwnProperty(t)) {
+        // @ts-ignore
         constants[t][method.toLowerCase()] = custom[t]?.[method];
       }
     });
